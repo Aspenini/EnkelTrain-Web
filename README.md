@@ -6,14 +6,29 @@
 
 EnkelTrain is a local-first TypeScript web app for training a tiny GPT-style causal language model in the browser. It uses TensorFlow.js and automatically prefers WebGPU when the browser supports it, with WebGL/CPU fallback.
 
+It is built and served entirely with [Bun](https://bun.com) — Bun's built-in bundler and dev server replace Node.js, Vite, and webpack.
+
+## Requirements
+
+- [Bun](https://bun.com) 1.3 or newer (no Node.js required).
+
 ## Run locally
 
 ```bash
-npm install
-npm run dev -- --port 5173
+bun install
+bun run dev
 ```
 
-Open `http://127.0.0.1:5173/`.
+Open `http://127.0.0.1:5173/`. The dev server has hot module reloading built in.
+
+## Build for production
+
+```bash
+bun run build      # outputs static files to dist/
+bun run preview    # serves the built dist/ locally
+```
+
+`bun run typecheck` runs the TypeScript compiler in no-emit mode.
 
 ## What it does
 

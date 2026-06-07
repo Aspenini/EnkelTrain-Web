@@ -1,9 +1,10 @@
 import { unzipSync, zipSync } from "fflate";
 import { Archive, ArchiveCompression, ArchiveFormat } from "libarchive.js";
-import ArchiveWorker from "libarchive.js/dist/worker-bundle.js?worker";
 
+// The Emscripten worker resolves `libarchive.wasm` relative to its own URL,
+// so it is served as a static asset at /vendor (see dev.ts and build.ts).
 Archive.init({
-  getWorker: () => new ArchiveWorker()
+  getWorker: () => new Worker(new URL("/vendor/worker-bundle.js", import.meta.url), { type: "module" })
 });
 
 export type TrainingDocument = {

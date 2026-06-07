@@ -1,6 +1,4 @@
-import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-backend-webgpu";
-import "@tensorflow/tfjs-backend-webgl";
+import { tf } from "./tf";
 
 export type TinyGptConfig = {
   vocabSize: number;
@@ -15,6 +13,7 @@ export type TrainOptions = {
   batchSize: number;
   stepsPerEpoch: number;
   onProgress: (update: TrainingUpdate) => void;
+  shouldStop?: () => boolean;
 };
 
 export type TrainingUpdate = {
@@ -218,9 +217,15 @@ export class TinyGpt {
     const examples = makeTrainingExamples(tokenIds, this.config.contextSize);
     const totalSteps = options.epochs * options.stepsPerEpoch;
     let lastLoss = Number.NaN;
+    let stopped = false;
 
-    for (let epoch = 1; epoch <= options.epochs; epoch += 1) {
+    for (let epoch = 1; epoch <= options.epochs && !stopped; epoch += 1) {
       for (let step = 1; step <= options.stepsPerEpoch; step += 1) {
+        if (options.shouldStop?.()) {
+          stopped = true;
+          break;
+        }
+
         const batch = sampleBatch(examples, options.batchSize);
         lastLoss = this.trainStep(batch.inputs, batch.targets);
         options.onProgress({
@@ -237,7 +242,7 @@ export class TinyGpt {
       }
     }
 
-    return { loss: lastLoss, examples: examples.length };
+    return { loss: lastLoss, examples: examples.length, stopped };
   }
 
   async generate(
@@ -246,10 +251,15 @@ export class TinyGpt {
     temperature: number,
     topK: number,
     eosId: number,
-    onToken?: (tokenId: number) => void
+    onToken?: (tokenId: number) => void,
+    shouldStop?: () => boolean
   ) {
     const ids = [...promptIds];
     for (let i = 0; i < maxNewTokens; i += 1) {
+      if (shouldStop?.()) {
+        break;
+      }
+
       const context = ids.slice(-this.config.contextSize);
       while (context.length < this.config.contextSize) {
         context.unshift(0);
